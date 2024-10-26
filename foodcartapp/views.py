@@ -1,7 +1,8 @@
 import json
 from django.http import JsonResponse
 from django.templatetags.static import static
-
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
 from .models import Product, Order, OrderProduct
 
@@ -57,28 +58,38 @@ def product_list_api(request):
         'indent': 4,
     })
 
-
+@api_view(['POST'])
 def register_order(request):
+    orders_json = Order.objects.all()
+    print(orders_json)
     try:
-        data = json.loads(request.body.decode())
         order = Order.objects.create(
-            firstname=data['firstname'],
-            lastname=data['lastname'],
-            phonenumber=data['phonenumber'],
-            address=data['address'],
+            firstname=request.data['firstname'],
+            lastname=request.data['lastname'],
+            phonenumber=request.data['phonenumber'],
+            address=request.data['address'],
         )
-        for product in data['products']:
-            product_id = product['product']
-            quantity = product['quantity']
-            product = Product.objects.get(id=product_id)
-            OrderProduct.objects.create(
-                order=order,
-                product=product,
-                quantity=quantity
-            )
 
-    except ValueError:
-        return JsonResponse({
-            'error': 'bla bla bla',
+        for product in request.data['products']:
+            try:
+                product_id = product['product']
+                quantity = product['quantity']
+                product = Product.objects.get(id=product_id)
+                OrderProduct.objects.create(
+                    order=order,
+                    product=product,
+                    quantity=quantity
+                )
+            except Product.DoesNotExist:
+                    return Response({
+                        'error': f"Продукт с id {product_id} не найден."
+                    })
+
+    except Exception as e:
+        return Response({
+            'error': str(e)
         })
-    return JsonResponse({})
+    return Response({
+        'message': 'Order created successfully',
+        'order_id': order.id,
+    })

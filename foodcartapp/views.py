@@ -1,6 +1,7 @@
 import json
 from django.http import JsonResponse
 from django.templatetags.static import static
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
@@ -60,9 +61,14 @@ def product_list_api(request):
 
 @api_view(['POST'])
 def register_order(request):
-    orders_json = Order.objects.all()
-    print(orders_json)
     try:
+        if not isinstance(request.data['products'], list) or not len(request.data['products']):
+            return Response(
+                {
+                    'error':  'products: Пустое значение или не список',
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
         order = Order.objects.create(
             firstname=request.data['firstname'],
             lastname=request.data['lastname'],
@@ -81,15 +87,24 @@ def register_order(request):
                     quantity=quantity
                 )
             except Product.DoesNotExist:
-                    return Response({
+                return Response(
+                    {
                         'error': f"Продукт с id {product_id} не найден."
-                    })
+                    },
+                    status=status.HTTP_404_NOT_FOUND
+                )
 
     except Exception as e:
-        return Response({
-            'error': str(e)
-        })
-    return Response({
-        'message': 'Order created successfully',
-        'order_id': order.id,
-    })
+        return Response(
+            {
+                'error': str(e)
+            },
+            status=status.HTTP_404_NOT_FOUND
+        )
+    return Response(
+        {
+            'message': 'Order created successfully',
+            'order_id': order.id,
+        },
+        status=status.HTTP_404_NOT_FOUND
+    )

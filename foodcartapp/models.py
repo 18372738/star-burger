@@ -138,7 +138,7 @@ class Order(models.Model):
         'адрес',
         max_length=100,
     )
-    order_products = models.ManyToManyField(
+    products = models.ManyToManyField(
         Product,
         through='OrderProduct'
     )

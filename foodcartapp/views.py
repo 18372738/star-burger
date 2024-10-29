@@ -5,8 +5,28 @@ from django.templatetags.static import static
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework.serializers import ModelSerializer
 
 from .models import Product, Order, OrderProduct
+
+
+class OrderProductSerializer(ModelSerializer):
+    class Meta:
+        model = OrderProduct
+        fields = ['product', 'quantity',]
+
+
+class OrderSerializer(ModelSerializer):
+    products = OrderProductSerializer(many=True, allow_empty=False)
+    class Meta:
+        model = Order
+        fields = [
+            'firstname',
+            'lastname',
+            'phonenumber',
+            'address',
+            'products',
+        ]
 
 
 def banners_list_api(request):
@@ -63,75 +83,23 @@ def product_list_api(request):
 
 @api_view(['POST'])
 def register_order(request):
-    try:
-        required_fields = ['firstname', 'lastname', 'phonenumber', 'address', 'products']
+    serializer = OrderSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    order = Order.objects.create(
+        firstname=serializer.validated_data['firstname'],
+        lastname=serializer.validated_data['lastname'],
+        phonenumber=serializer.validated_data['phonenumber'],
+        address=serializer.validated_data['address'],
+    )
 
-        for field in required_fields:
-            if not request.data.get(field):
-                return Response(
-                    {
-                        'error': f'{field} - обязательное поле и не может быть пустым'
-                    },
-                    status=status.HTTP_400_BAD_REQUEST
-                    )
-
-        phonenumber = request.data.get('phonenumber')
-        parsed_number = phonenumbers.parse(phonenumber, "RU")
-        if not phonenumbers.is_valid_number(parsed_number):
-            return Response(
-                {'error': 'Неверный формат телефона, должен быть для России.'},
-                status=status.HTTP_400_BAD_REQUEST
+    for product in serializer.validated_data['products']:
+            OrderProduct.objects.create(
+                order=order,
+                product=product['product'],
+                quantity=product['quantity'],
             )
 
-        if not isinstance(request.data['products'], list) or not request.data['products']:
-            return Response(
-                {
-                    'error':  'products: Пустое значение или не список',
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        order = Order.objects.create(
-            firstname=request.data['firstname'],
-            lastname=request.data['lastname'],
-            phonenumber=request.data['phonenumber'],
-            address=request.data['address'],
-        )
-
-        for product in request.data['products']:
-            try:
-                product_id = product['product']
-                quantity = product['quantity']
-                product = Product.objects.get(id=product_id)
-                OrderProduct.objects.create(
-                    order=order,
-                    product=product,
-                    quantity=quantity
-                )
-            except Product.DoesNotExist:
-                return Response(
-                    {
-                        'error': f"Продукт с id {product_id} не найден."
-                    },
-                    status=status.HTTP_404_NOT_FOUND
-                )
-
-    except KeyError as e:
-        return Response(
-            {'error': f'Нет данных: {str(e)}'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    except Exception as e:
-        return Response(
-            {
-                'error': str(e)
-            },
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-    return Response(
-        {
+    return Response({
             'message': 'Order created successfully',
             'order_id': order.id,
-        },
-        status=status.HTTP_201_CREATED
-    )
+        })

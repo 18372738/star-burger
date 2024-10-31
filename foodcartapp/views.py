@@ -17,10 +17,11 @@ class OrderProductSerializer(ModelSerializer):
 
 
 class OrderSerializer(ModelSerializer):
-    products = OrderProductSerializer(many=True, allow_empty=False)
+    products = OrderProductSerializer(many=True, allow_empty=False, write_only=True)
     class Meta:
         model = Order
         fields = [
+            'id',
             'firstname',
             'lastname',
             'phonenumber',
@@ -98,8 +99,5 @@ def register_order(request):
                 product=product['product'],
                 quantity=product['quantity'],
             )
-
-    return Response({
-            'message': 'Order created successfully',
-            'order_id': order.id,
-        })
+    order_front = OrderSerializer(order).data
+    return Response(order_front)

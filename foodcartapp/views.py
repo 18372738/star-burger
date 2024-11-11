@@ -98,6 +98,7 @@ def register_order(request):
                 order=order,
                 product=product['product'],
                 quantity=product['quantity'],
+                price=product['product'].price
             )
     order_front = OrderSerializer(order).data
     return Response(order_front)

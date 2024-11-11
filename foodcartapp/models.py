@@ -167,6 +167,12 @@ class OrderProduct(models.Model):
         verbose_name='количество',
         default=1
     )
+    price = models.DecimalField(
+        'стоимость',
+        max_digits=6,
+        decimal_places=2,
+        validators=[MinValueValidator(0)]
+    )
 
     def __str__(self):
         return f'{self.order} - {self.product.name} ({self.quantity})'

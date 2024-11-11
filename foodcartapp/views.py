@@ -2,6 +2,7 @@ import json
 import phonenumbers
 from django.http import JsonResponse
 from django.templatetags.static import static
+from django.db import transaction
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -82,6 +83,7 @@ def product_list_api(request):
     })
 
 
+@transaction.atomic
 @api_view(['POST'])
 def register_order(request):
     serializer = OrderSerializer(data=request.data)

@@ -153,6 +153,11 @@ class Order(models.Model):
         'адрес',
         max_length=100,
     )
+    comment = models.TextField(
+        'комментарий',
+        max_length=300,
+        blank=True
+    )
     products = models.ManyToManyField(
         Product,
         through='OrderProduct'

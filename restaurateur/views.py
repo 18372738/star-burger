@@ -93,7 +93,7 @@ def view_restaurants(request):
 
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
-    orders = Order.objects.all()
+    orders = Order.objects.exclude(status='delivered')
     order_with_total_cost = orders.annotate(
         total_cost=Sum(F('orders__price') * F('orders__quantity'))
     )

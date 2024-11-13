@@ -2,6 +2,7 @@ from django.db import models
 from django.core.validators import MinValueValidator
 from django.db.models import Sum, F
 from phonenumber_field.modelfields import PhoneNumberField
+from django.utils import timezone
 
 
 ORDER_STATUS = (
@@ -9,6 +10,13 @@ ORDER_STATUS = (
     ('assembly', 'На сборке'),
     ('courier', 'Передан курьеру'),
     ('delivered', 'Доставлен'),
+)
+
+
+PAYMENT_CHOICES = (
+    ('not specified', 'Не указано'),
+    ('cash', 'Наличный расчет'),
+    ('non-cash', 'Безналичный расчет'),
 )
 
 
@@ -148,6 +156,13 @@ class Order(models.Model):
         default='unprocessed',
         db_index=True
     )
+    payment = models.CharField(
+        verbose_name='Способ оплаты',
+        choices=PAYMENT_CHOICES,
+        max_length=30,
+        default='not specified',
+        db_index=True
+    )
     firstname = models.CharField(
         'имя',
         max_length=30
@@ -156,7 +171,7 @@ class Order(models.Model):
         'фамилия',
         max_length=50
     )
-    phonenumber = PhoneNumberField('телефон')
+    phonenumber = PhoneNumberField('телефон', db_index=True)
     address = models.CharField(
         'адрес',
         max_length=100,
@@ -169,6 +184,23 @@ class Order(models.Model):
     products = models.ManyToManyField(
         Product,
         through='OrderProduct'
+    )
+    registrated_at = models.DateTimeField(
+        verbose_name='Дата создания',
+        default=timezone.now,
+        db_index=True,
+    )
+    called_at = models.DateTimeField(
+        verbose_name='Дата звонка',
+        blank=True,
+        null=True,
+        db_index=True,
+    )
+    delivered_at = models.DateTimeField(
+        verbose_name='Дата доставки',
+        blank=True,
+        null=True,
+        db_index=True,
     )
     objects = OrderQuerySet.as_manager()
 

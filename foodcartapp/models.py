@@ -6,10 +6,10 @@ from django.utils import timezone
 
 
 ORDER_STATUS = (
-    ('unprocessed', 'Необработанный'),
-    ('assembly', 'На сборке'),
-    ('courier', 'Передан курьеру'),
-    ('delivered', 'Доставлен'),
+    ('0', 'Необработанный'),
+    ('1', 'На сборке'),
+    ('2', 'Передан курьеру'),
+    ('3', 'Доставлен'),
 )
 
 
@@ -153,7 +153,7 @@ class Order(models.Model):
         verbose_name='Статус',
         choices=ORDER_STATUS,
         max_length=30,
-        default='unprocessed',
+        default='0',
         db_index=True
     )
     payment = models.CharField(
@@ -175,6 +175,14 @@ class Order(models.Model):
     address = models.CharField(
         'адрес',
         max_length=100,
+    )
+    restaurant = models.ForeignKey(
+        Restaurant,
+        verbose_name='ресторан',
+        related_name='restaurants',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
     )
     comment = models.TextField(
         'комментарий',

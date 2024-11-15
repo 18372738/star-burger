@@ -3,6 +3,7 @@ from django.shortcuts import redirect, render
 from django.views import View
 from django.urls import reverse_lazy
 from django.contrib.auth.decorators import user_passes_test
+from django.db.models import Count
 
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
@@ -92,8 +93,14 @@ def view_restaurants(request):
 
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
-    orders = Order.objects.exclude(status='delivered')
-    order_with_total_cost = orders.total_cost()
+    order_with_total_cost = Order.objects.exclude(status='delivered').total_cost().order_by('status')
+    for order in order_with_total_cost:
+        products = order.products.all()
+        restaurant = Restaurant.objects.filter(
+            menu_items__product__in=products,
+            menu_items__availability=True
+        ).annotate(rest=Count('menu_items__product'))
+        order.restaurants = restaurant
     return render(request, template_name='order_items.html', context={
         'order_items': order_with_total_cost
     })

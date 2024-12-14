@@ -42,7 +42,7 @@
               <summary style="cursor: pointer;">Могут приготовить</summary>
                 <ul>
                 {% for restaurant in item.restaurants %}
-                  <li>{{ restaurant.name }}</li>
+                  <li>{{ restaurant.restaurant }} - {{ restaurant.distance}} км</li>
                 {% endfor %}
                 </ul>
             </details>

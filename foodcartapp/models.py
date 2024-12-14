@@ -1,6 +1,6 @@
 from django.db import models
 from django.core.validators import MinValueValidator
-from django.db.models import Sum, F
+from django.db.models import Sum, F, Count
 from phonenumber_field.modelfields import PhoneNumberField
 from django.utils import timezone
 
@@ -35,7 +35,7 @@ class Restaurant(models.Model):
         max_length=50,
         blank=True,
     )
-
+    
     class Meta:
         verbose_name = 'ресторан'
         verbose_name_plural = 'рестораны'

@@ -1,15 +1,36 @@
+import requests
+from geopy import distance
+
 from django import forms
 from django.shortcuts import redirect, render
 from django.views import View
 from django.urls import reverse_lazy
 from django.contrib.auth.decorators import user_passes_test
-from django.db.models import Count
+from django.db.models import Count, Prefetch, Sum
 
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
 
+from star_burger import settings
+from foodcartapp.models import Product, Restaurant, Order, RestaurantMenuItem
 
-from foodcartapp.models import Product, Restaurant, Order
+
+def fetch_coordinates(apikey, address):
+    base_url = "https://geocode-maps.yandex.ru/1.x"
+    response = requests.get(base_url, params={
+        "geocode": address,
+        "apikey": apikey,
+        "format": "json",
+    })
+    response.raise_for_status()
+    found_places = response.json()['response']['GeoObjectCollection']['featureMember']
+
+    if not found_places:
+        return None
+
+    most_relevant = found_places[0]
+    lon, lat = most_relevant['GeoObject']['Point']['pos'].split(" ")
+    return lon, lat
 
 
 class Login(forms.Form):
@@ -91,16 +112,48 @@ def view_restaurants(request):
     })
 
 
+def get_available_restaurants(orders):
+    menu_items = RestaurantMenuItem.objects.filter(availability=True).select_related('product', 'restaurant')
+    restaurant_products = {}
+    for item in menu_items:
+        if item.restaurant not in restaurant_products:
+            restaurant_products[item.restaurant] = set()
+        restaurant_products[item.restaurant].add(item.product)
+
+    for order in orders:
+        products = set(order.products.all())
+        available_restaurants = []
+        for restaurant, products_in_menu in restaurant_products.items():
+            if products.issubset(products_in_menu):
+                available_restaurants.append(restaurant)
+        order.available_restaurants = available_restaurants
+
+    return orders
+
+
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
-    order_with_total_cost = Order.objects.exclude(status='delivered').total_cost().order_by('status')
-    for order in order_with_total_cost:
-        products = order.products.all()
-        restaurant = Restaurant.objects.filter(
-            menu_items__product__in=products,
-            menu_items__availability=True
-        ).annotate(rest=Count('menu_items__product'))
-        order.restaurants = restaurant
-    return render(request, template_name='order_items.html', context={
-        'order_items': order_with_total_cost
-    })
+    orders = (
+        Order.objects.exclude(status='delivered')
+        .prefetch_related('products')
+        .annotate(total_cost=Sum('products__price'))
+        .order_by('status')
+    )
+    orders = get_available_restaurants(orders)
+    for order in orders:
+        restaurants_with_distance = []
+        for restaurant in order.available_restaurants:
+            client_address = fetch_coordinates(settings.YANDEX_API_KEY, order.address)
+            restaurant_address = fetch_coordinates(settings.YANDEX_API_KEY, restaurant.address)
+            if client_address:
+                geopy_distance = round(distance.distance(client_address[::-1], restaurant_address[::-1]).km, 2)
+            else:
+                geopy_distance = 'Ошибка определения координат'
+
+            restaurants_with_distance.append({
+                'restaurant': restaurant,
+                'distance': geopy_distance,
+            })
+        order.restaurants = restaurants_with_distance
+
+    return render(request, 'order_items.html', {'order_items': orders})

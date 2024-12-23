@@ -6,13 +6,14 @@ from django.shortcuts import redirect, render
 from django.views import View
 from django.urls import reverse_lazy
 from django.contrib.auth.decorators import user_passes_test
-from django.db.models import Count, Prefetch, Sum
+from django.db.models import Prefetch, Sum
 
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
 
 from star_burger import settings
 from foodcartapp.models import Product, Restaurant, Order, RestaurantMenuItem
+from place.models import Place
 
 
 def fetch_coordinates(apikey, address):
@@ -131,6 +132,33 @@ def get_available_restaurants(orders):
     return orders
 
 
+def get_coordinates(orders):
+    client_addresses = set()
+    restaurant_addresses = set()
+    for order in orders:
+        client_addresses.add(order.address)
+        for restaurant in order.available_restaurants:
+            restaurant_addresses.add(restaurant.address)
+    all_addresses = client_addresses | restaurant_addresses
+    places = Place.objects.filter(address__in=all_addresses)
+    coordinates = {place.address: (place.lon, place.lat) for place in places}
+    addresses = set(all_addresses) - set(coordinates.keys())
+
+    for address in addresses:
+        fetched_coordinates = fetch_coordinates(settings.YANDEX_API_KEY, address)
+        if fetched_coordinates:
+            Place.objects.get_or_create(
+                address=address,
+                lat=fetched_coordinates[1],
+                lon=fetched_coordinates[0],
+            )
+            coordinates[address] = fetched_coordinates
+        else:
+            coordinates[address] = None
+
+    return coordinates
+
+
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
     orders = (
@@ -140,13 +168,16 @@ def view_orders(request):
         .order_by('status')
     )
     orders = get_available_restaurants(orders)
+    coordinates = get_coordinates(orders)
+
     for order in orders:
         restaurants_with_distance = []
         for restaurant in order.available_restaurants:
-            client_address = fetch_coordinates(settings.YANDEX_API_KEY, order.address)
-            restaurant_address = fetch_coordinates(settings.YANDEX_API_KEY, restaurant.address)
-            if client_address:
-                geopy_distance = round(distance.distance(client_address[::-1], restaurant_address[::-1]).km, 2)
+            restaurant_coords = coordinates.get(restaurant.address)
+            client_coords = coordinates.get(order.address)
+
+            if client_coords and restaurant_coords:
+                geopy_distance = round(distance.distance(client_coords[::-1], restaurant_coords[::-1]).km, 2)
             else:
                 geopy_distance = 'Ошибка определения координат'
 
@@ -154,6 +185,7 @@ def view_orders(request):
                 'restaurant': restaurant,
                 'distance': geopy_distance,
             })
+
         order.restaurants = restaurants_with_distance
 
     return render(request, 'order_items.html', {'order_items': orders})

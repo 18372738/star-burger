@@ -167,7 +167,7 @@ def view_orders(request):
         Order.objects.exclude(status='delivered')
         .prefetch_related('products')
         .annotate(total_cost=Sum('products__price'))
-        .order_by('status')
+        .order_by('-status')
     )
     orders = get_available_restaurants(orders)
     coordinates = get_coordinates(orders)

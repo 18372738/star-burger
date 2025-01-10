@@ -35,7 +35,7 @@ class Restaurant(models.Model):
         max_length=50,
         blank=True,
     )
-    
+
     class Meta:
         verbose_name = 'ресторан'
         verbose_name_plural = 'рестораны'
@@ -193,7 +193,7 @@ class Order(models.Model):
         Product,
         through='OrderProduct'
     )
-    registrated_at = models.DateTimeField(
+    created_at = models.DateTimeField(
         verbose_name='Дата создания',
         default=timezone.now,
         db_index=True,
@@ -234,7 +234,8 @@ class OrderProduct(models.Model):
         on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(
         verbose_name='количество',
-        default=1
+        default=1,
+        validators=[MinValueValidator(1)],
     )
     price = models.DecimalField(
         'стоимость',

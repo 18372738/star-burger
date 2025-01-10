@@ -154,7 +154,9 @@ def get_coordinates(orders):
             )
             coordinates[address] = fetched_coordinates
         else:
-            coordinates[address] = None
+            Place.objects.get_or_create(
+                address=address
+            )
 
     return coordinates
 

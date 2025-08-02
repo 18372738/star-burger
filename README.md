@@ -54,12 +54,22 @@ python -m venv venv
 pip install -r requirements.txt
 ```
 
-Определите переменную окружения `SECRET_KEY`. Создать файл `.env` в каталоге `star_burger/` и положите туда такой код:
+Определите переменные окружения SECRET_KEY и API_KEY_GEOKODER. Получите API ключ Яндекс-геокодера в [кабинете разработчика](https://developer.tech.yandex.ru/services)
+Подключите [Rollbar](https://app.rollbar.com/) для получения сообщений об ошибках.
+[Подключите Postgre](https://www.digitalocean.com/community/tutorials/how-to-use-postgresql-with-your-django-application-on-ubuntu-14-04)
+
+Создайте файл .env в каталоге star_burger/ и положите туда такой код:
+
 ```sh
-SECRET_KEY=django-insecure-0if40nf4nf93n4
+SECRET_KEY=Секретный ключ щт вашего проекта Django
+API_KEY_GEOKODER=Ваш API ключ для Яндекс-геокодера
+DEBUG=True/False
+ALLOWED_HOSTS=список хостов
+ROLLBAR=Ваш токен от Rollbar
+DATABASE_URL=postgres://nameuser:password@127.0.0.1:5432/namedb
 ```
 
-Создайте файл базы данных SQLite и отмигрируйте её следующей командой:
+Создайте файл базы данных и отмигрируйте её следующей командой:
 
 ```sh
 python manage.py migrate

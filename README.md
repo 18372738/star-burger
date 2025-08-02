@@ -62,7 +62,7 @@ pip install -r requirements.txt
 
 ```sh
 SECRET_KEY=Секретный ключ щт вашего проекта Django
-API_KEY_GEOKODER=Ваш API ключ для Яндекс-геокодера
+YANDEX_API_KEY=Ваш API ключ для Яндекс-геокодера
 DEBUG=True/False
 ALLOWED_HOSTS=список хостов
 ROLLBAR=Ваш токен от Rollbar

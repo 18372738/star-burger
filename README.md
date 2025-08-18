@@ -159,6 +159,12 @@ Parcel будет следить за файлами в каталоге `bundle
 - `ALLOWED_HOSTS` — [см. документацию Django](https://docs.djangoproject.com/en/3.1/ref/settings/#allowed-hosts)
 - `YANDEX_API_KEY` - получите API [в кабинете разработчика](https://developer.tech.yandex.ru/services), [инструкция](https://dvmn.org/encyclopedia/api-docs/yandex-geocoder-api/) как получить
 
+Быстрое обновление кода на сервере.
+Запустите bash-скрипт командой
+```sh
+./deploy/deploy-burger.sh
+```
+Bash-скрипт - обновит код репозитория, установит библиотеки, пересоберёт JS-код, пересоберёт статику Django, накатит миграции, перезапустит сервисы Systemd, сообщит об успешном завершении деплоя, упадёт, в случае ошибки, дальше не пойдёт
 ## Цели проекта
 
 Код написан в учебных целях — это урок в курсе по Python и веб-разработке на сайте [Devman](https://dvmn.org). За основу был взят код проекта [FoodCart](https://github.com/Saibharath79/FoodCart).

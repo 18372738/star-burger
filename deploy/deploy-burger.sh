@@ -65,7 +65,7 @@ then
 fi
 
 echo "Перезапуск сервисов..."
-sudo systemctl restart gunicorn
+sudo systemctl restart star-burger.service
 sudo systemctl restart nginx
 if [ $? -ne 0 ];
 then
@@ -74,3 +74,5 @@ then
 fi
 
 echo "Деплой завершён успешно!"
+
+bash /opt/star-burger/deploy/message_rollbar.sh

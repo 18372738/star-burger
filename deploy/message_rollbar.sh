@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 set -a
 source /opt/star-burger/.env
@@ -15,8 +16,3 @@ curl -X POST https://api.rollbar.com/api/1/deploy/ \
   -d revision=$REVISION \
   -d local_username=$(whoami)
 
-if [ $? -ne 0 ];
-then
-  echo "Ошибка при уведомлении Rollbar!"
-  exit 1
-fi

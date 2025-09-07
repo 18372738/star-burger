@@ -66,7 +66,6 @@ fi
 
 echo "Перезапуск сервисов..."
 sudo systemctl restart star-burger.service
-sudo systemctl restart nginx
 if [ $? -ne 0 ];
 then
     echo "Ошибка при перезапуске сервисов!"
